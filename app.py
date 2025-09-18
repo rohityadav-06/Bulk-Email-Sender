@@ -37,10 +37,14 @@ def index():
 
             #  Handle Excel file (mandatory)
             excel_file = request.files["excel"]
-            excel_path = "emails.xlsx"
+            excel_path = "emails_uploaded" + os.path.splitext(excel_file.filename)[1]
             excel_file.save(excel_path)
 
-            df = pd.read_excel(excel_path)
+            if excel_path.endswith(".csv"):
+                df = pd.read_csv(excel_path)
+            else:
+                df = pd.read_excel(excel_path)
+
 
             #  Setup SMTP server
             server = smtplib.SMTP("smtp.gmail.com", 587)
