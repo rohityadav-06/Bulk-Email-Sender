@@ -15,12 +15,26 @@
       <input type="text" name="email" placeholder="Enter your Gmail" required>
 
       <label>Password (App Password)</label>
-      <input type="password" name="password" placeholder="Enter App Password" required>
-      <p class="note">Use Gmail <strong>App Password</strong> (not your normal password)</p>
+      <div class="password-wrapper">
+        <!-- use id="password" for JS -->
+        <input id="password" type="password" name="password" placeholder="Enter App Password" required aria-describedby="pw-note">
+        <!-- button toggles visibility; use aria-pressed for accessibility -->
+        <button type="button" class="toggle-password" id="togglePassword" aria-pressed="false" aria-label="Show password">
+          <!-- simple eye icon (SVG) -->
+          <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+            <path d="M17.94 17.94A10.05 10.05 0 0 1 12 20c-7 0-11-8-11-8a21.74 21.74 0 0 1 5.06-6.06"></path>
+            <path d="M1 1l22 22"></path>
+          </svg>
+        </button>
+      </div>
+      <p id="pw-note" class="note">Use Gmail <strong>App Password</strong> (not your normal password)</p>
 
       <label>Your Name (displayed as sender)</label>
       <input type="text" name="from_name" placeholder="Enter your name" required>
-
 
       <label>Subject</label>
       <input type="text" name="subject" placeholder="Enter email subject" required>
@@ -29,7 +43,7 @@
       <textarea name="message" rows="5" placeholder="Write your message here. Use {name} for personalization." required></textarea>
 
       <label>Upload Documents PDF(Resume, Adhar Card, Etc)</label>
-      <input type="file" name="document" accept=".pdf">
+      <input type="file" name="document" accept=".pdf,.docx,.doc,.png,.jpg" multiple>
 
       <label>Upload Excel File (with Name, Email columns)</label>
       <input type="file" name="excel" accept=".xlsx,.xls,.csv" required>
@@ -37,14 +51,50 @@
       <button type="submit">🚀 Send Emails</button>
     </form>
 
-    <!-- Flash messages -->
-    {% with messages = get_flashed_messages() %}
+    <!-- Flash messages with categories -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        {% for message in messages %}
-          <div class="success">{{ message }}</div>
+        {% for category, message in messages %}
+          <div class="{{ 'success' if category == 'success' else 'error' }}">{{ message }}</div>
         {% endfor %}
       {% endif %}
     {% endwith %}
   </div>
+
+  <script>
+    // Toggle password visibility logic
+    (function() {
+      const pwd = document.getElementById('password');
+      const toggle = document.getElementById('togglePassword');
+      const eyeOpen = document.getElementById('eyeOpen');
+      const eyeClosed = document.getElementById('eyeClosed');
+
+      toggle.addEventListener('click', function() {
+        const isHidden = pwd.type === 'password';
+        pwd.type = isHidden ? 'text' : 'password';
+
+        // swap icons & update aria
+        if (isHidden) {
+          eyeOpen.style.display = 'none';
+          eyeClosed.style.display = '';
+          toggle.setAttribute('aria-pressed', 'true');
+          toggle.setAttribute('aria-label', 'Hide password');
+        } else {
+          eyeOpen.style.display = '';
+          eyeClosed.style.display = 'none';
+          toggle.setAttribute('aria-pressed', 'false');
+          toggle.setAttribute('aria-label', 'Show password');
+        }
+      });
+
+      // Optional: allow toggle via keyboard (Space/Enter)
+      toggle.addEventListener('keydown', function(e) {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          toggle.click();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

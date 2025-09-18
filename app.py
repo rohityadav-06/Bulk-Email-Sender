@@ -4,7 +4,6 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
-from email.utils import formataddr
 from email import encoders
 import os
 
@@ -21,18 +20,29 @@ def index():
             subject = request.form["subject"]
             message = request.form["message"]
 
-            document_file = request.files["document"]
-            excel_file = request.files["excel"]
+            # ✅ Handle multiple uploaded documents (optional)
+            documents = request.files.getlist("document")
+            document_paths = []
 
-            # Save uploaded files temporarily
-            document_path = document_file.filename
+            for doc in documents:
+                if not doc:  # no file object
+                    continue
+                if not doc.filename or doc.filename.strip() == "":  # empty name
+                    continue
+
+                os.makedirs("uploads", exist_ok=True)
+                path = os.path.join("uploads", doc.filename)
+                doc.save(path)
+                document_paths.append(path)
+
+            # ✅ Handle Excel file (mandatory)
+            excel_file = request.files["excel"]
             excel_path = "emails.xlsx"
-            document_file.save(document_path)
             excel_file.save(excel_path)
 
             df = pd.read_excel(excel_path)
 
-            # Setup SMTP server
+            # ✅ Setup SMTP server
             server = smtplib.SMTP("smtp.gmail.com", 587)
             server.starttls()
             server.login(your_email, your_password)
@@ -50,26 +60,38 @@ def index():
                 body = message.replace("{name}", name)
                 msg.attach(MIMEText(body, "plain"))
 
-                # Attach resume
-                with open(document_path, "rb") as f:
-                    part = MIMEBase("application", "octet-stream")
-                    part.set_payload(f.read())
-                    encoders.encode_base64(part)
-                    part.add_header("Content-Disposition", f"attachment; filename={document_path}")
-                    msg.attach(part)
+                # ✅ Attach all uploaded documents (if any)
+                for path in document_paths:
+                    if os.path.exists(path):
+                        with open(path, "rb") as f:
+                            part = MIMEBase("application", "octet-stream")
+                            part.set_payload(f.read())
+                            encoders.encode_base64(part)
+                            part.add_header(
+                                "Content-Disposition",
+                                f"attachment; filename={os.path.basename(path)}"
+                            )
+                            msg.attach(part)
 
                 server.sendmail(your_email, recipient, msg.as_string())
 
             server.quit()
 
-            # Remove temporary files
-            os.remove(document_path)
-            os.remove(excel_path)
+            # ✅ Remove temporary files
+            for path in document_paths:
+                if os.path.exists(path):
+                    os.remove(path)
+            if os.path.exists(excel_path):
+                os.remove(excel_path)
 
             flash("✅ Emails sent successfully!", "success")
+
         except Exception as e:
             flash(f"❌ Error: {str(e)}", "error")
 
         return redirect(url_for("index"))
 
     return render_template("index.html")
+
+if __name__ == "__main__":
+    app.run(debug=True)
