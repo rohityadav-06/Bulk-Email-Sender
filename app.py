@@ -20,7 +20,7 @@ def index():
             subject = request.form["subject"]
             message = request.form["message"]
 
-            # ✅ Handle multiple uploaded documents (optional)
+            #  Handle multiple uploaded documents (optional)
             documents = request.files.getlist("document")
             document_paths = []
 
@@ -35,14 +35,14 @@ def index():
                 doc.save(path)
                 document_paths.append(path)
 
-            # ✅ Handle Excel file (mandatory)
+            #  Handle Excel file (mandatory)
             excel_file = request.files["excel"]
             excel_path = "emails.xlsx"
             excel_file.save(excel_path)
 
             df = pd.read_excel(excel_path)
 
-            # ✅ Setup SMTP server
+            #  Setup SMTP server
             server = smtplib.SMTP("smtp.gmail.com", 587)
             server.starttls()
             server.login(your_email, your_password)
@@ -60,7 +60,7 @@ def index():
                 body = message.replace("{name}", name)
                 msg.attach(MIMEText(body, "plain"))
 
-                # ✅ Attach all uploaded documents (if any)
+                #  Attach all uploaded documents (if any)
                 for path in document_paths:
                     if os.path.exists(path):
                         with open(path, "rb") as f:
@@ -77,14 +77,14 @@ def index():
 
             server.quit()
 
-            # ✅ Remove temporary files
+            #  Remove temporary files
             for path in document_paths:
                 if os.path.exists(path):
                     os.remove(path)
             if os.path.exists(excel_path):
                 os.remove(excel_path)
 
-            flash("✅ Emails sent successfully!", "success")
+            flash(" Emails sent successfully!", "success")
 
         except Exception as e:
             flash(f"❌ Error: {str(e)}", "error")
